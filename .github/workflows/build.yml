@@ -1,0 +1,87 @@
+name: Build Mobile Apps (APK and iOS)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Repository Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Generate Android Native Code (Expo Prebuild)
+        run: npx expo prebuild -p android --clean
+
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: FloatingTranslator-Android-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Git Repository Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Generate iOS Native Code (Expo Prebuild)
+        run: npx expo prebuild -p ios --clean
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build iOS Application (Without Signing)
+        # Apple requires an Apple Developer Account to properly sign an IPA.
+        # This will build the .app payload which can be run on simulators 
+        # or bundled into an unsigned IPA for tools like AltStore.
+        run: |
+          cd ios
+          xcodebuild -workspace FloatingTranslator.xcworkspace -scheme FloatingTranslator -configuration Release CODE_SIGNING_ALLOWED=NO build -derivedDataPath build
+
+      - name: Package iOS App Output
+        run: |
+          cd ios/build/Build/Products/Release-iphoneos
+          zip -r FloatingTranslator_iOS.zip FloatingTranslator.app
+
+      - name: Upload iOS Output
+        uses: actions/upload-artifact@v3
+        with:
+          name: FloatingTranslator-iOS
+          path: ios/build/Build/Products/Release-iphoneos/FloatingTranslator_iOS.zip

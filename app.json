@@ -1,0 +1,17 @@
+{
+    "expo": {
+        "name": "FloatingTranslator",
+        "slug": "floating-translator",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "android": {
+            "package": "com.transIate.floatingtranslator",
+            "permissions": [
+                "SYSTEM_ALERT_WINDOW"
+            ]
+        },
+        "ios": {
+            "bundleIdentifier": "com.transIate.floatingtranslator"
+        }
+    }
+}
